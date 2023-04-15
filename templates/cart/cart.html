@@ -1,0 +1,156 @@
+{% extends 'base.html' %} {% block title %}Cart{% endblock title %} 
+{% block content %} {% load static %}{% load humanize %}
+
+<section class="section-content padding-y bg">
+  <div class="container">
+    <!-- ============================ COMPONENT 1 ================================= -->
+    {% if not cart_items %}
+      <!--Print message -->
+      <h2 class="text-center">Your Shopping Cart is Empty</h2>
+      <br />
+      <div class="text-center">
+        <a href="{% url 'store:store' %}" class="btn btn-primary"> Continue Shopping </a>
+      </div>
+    {% else %}
+    <div class="row">
+      <aside class="col-lg-9">
+        <div class="card">
+          <table class="table table-borderless table-shopping-cart">
+            <thead class="text-muted">
+              <tr class="small text-uppercase">
+                <th scope="col">Product</th>
+                <th scope="col" width="120">Quantity</th>
+                <th scope="col" width="120">Price</th>
+                <th scope="col" class="text-right" width="200"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in cart_items %}
+              <tr>
+                <td>
+                  <figure class="itemside align-items-center">
+                    <div class="aside">
+                      <img src="{{item.product.images.url}}" class="img-sm" />
+                    </div>
+                    <figcaption class="info">
+                      <a href="{{item.product.get_url}}" class="title text-dark"
+                        >{{item.product.product_name}}</a
+                      >
+                      <p class="text-muted small">
+                        Grip Size: DONT KNOW YET <br />
+                        Brand: {{item.product.category.category_name}}
+                      </p>
+                    </figcaption>
+                  </figure>
+                </td>
+                <td>
+                  <!-- col.// -->
+                  <div class="col">
+                    <div class="input-group input-spinner">
+                      <div class="input-group-prepend">
+                        <a
+                          href="{% url 'cart:sub_from_cart' item.product.id %}"
+                          class="btn btn-light"
+                          type="button"
+                          id="button-plus"
+                        >
+                          <i class="fa fa-minus"></i>
+                        </a>
+                      </div>
+                      <input
+                        type="text"
+                        class="form-control"
+                        name="quantity"
+                        value="{{item.cart_quantity}}"
+                      />
+                      <div class="input-group-append">
+                        <a
+                          href="{% url 'cart:add-to-cart' item.product.id %}"
+                          class="btn btn-light"
+                          type="button"
+                          id="button-minus"
+                        >
+                          <i class="fa fa-plus"></i>
+                        </a>
+                      </div>
+                    </div>
+                    <!-- input-group.// -->
+                  </div>
+                  <!-- col.// -->
+                </td>
+                <td>
+                  <div class="price-wrap">
+                    <var class="price">${{item.sub_total | intcomma}}</var>
+                    <small class="text-muted">
+                      ${{item.product.price | intcomma}} each
+                    </small>
+                  </div>
+                  <!-- price-wrap .// -->
+                </td>
+                <td class="text-right">
+                  <a href="{% url 'cart:remove_full_cart' item.product.id %}" class="btn btn-danger"> Remove</a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <!-- card.// -->
+      </aside>
+      <!-- col.// -->
+      <aside class="col-lg-3">
+        <div class="card">
+          <div class="card-body">
+            <dl class="dlist-align">
+              <dt>Total price:</dt>
+              {% if total == 0 %}
+                <dd class="text-right">$0</dd>
+              {% else %}
+                <dd class="text-right">${{total | intcomma}}</dd>
+              {% endif %}
+            </dl>
+            <dl class="dlist-align">
+              <dt>Tax:</dt>
+              {% if tax == 0 %}
+                <dd class="text-right">$0</dd>
+              {% else %}
+                <dd class="text-right">${{tax | intcomma}}</dd>
+              {% endif %}
+            </dl>
+            <dl class="dlist-align">
+              <dt>Total:</dt>
+              {% if grand_total == 0 %}
+              <dd class="text-right text-dark b">
+                <strong>$0</strong>
+              </dd>
+              {% else %}
+              <dd class="text-right text-dark b">
+                <strong>${{grand_total | intcomma}}</strong>
+              </dd>
+              {% endif %}
+            </dl>
+            <hr />
+            <p class="text-center mb-3">
+              <img src="{% static 'images/misc/payments.png' %}" height="26" />
+            </p>
+            <a href="./place-order.html" class="btn btn-primary btn-block">
+              Checkout
+            </a>
+            <a href="{% url 'store:store' %}" class="btn btn-light btn-block"
+              >Continue Shopping</a
+            >
+          </div>
+          <!-- card-body.// -->
+        </div>
+        <!-- card.// -->
+      </aside>
+      <!-- col.// -->
+    </div>
+    <!-- row.// -->
+    {% endif %}
+    <!-- ============================ COMPONENT 1 END .// ================================= -->
+  </div>
+  <!-- container .//  -->
+</section>
+<!-- ========================= SECTION CONTENT END// ========================= -->
+{% endblock content %}
