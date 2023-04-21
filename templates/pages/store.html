@@ -3,7 +3,12 @@
 
 <section class="section-pagetop bg">
   <div class="container">
+    {% if 'search' in request.path %}
+      <h2 class="title-page">Search Result</h2>
+    {% else %}
     <h2 class="title-page">Our Store</h2>
+    {% endif %}
+    
   </div>
   <!-- container //  -->
 </section>
@@ -120,19 +125,17 @@
                   >
                   <div class="price-wrap mt-2">
                     <span class="price">${{product.price | intcomma}}</span>
-                    {% comment %} <del class="price-old">$1980</del>
-                    {% endcomment %}
+                    <del class="price-old">$1980</del>
                   </div>
-                  <!-- price-wrap.// -->
                 </div>
                 {% if product.stock <= 0 %}
-                  <h5 class="btn btn-danger">Out of Stock</h5>
+                <h5 class="btn btn-danger">Out of Stock</h5>
                 {% else %}
-                  <a href="{% url 'cart:add-to-cart' product.id%}" class="btn btn-primary">
-                   <span class="text">Add to cart</span>
-                   <i class="fas fa-shopping-cart"></i>
+                <a href="{{product.get_url}}" class="btn btn-primary">
+                  <span class="text">View Product</span>
+                  <i class="fas fa-eye"></i>
                 </a>
-            {% endif %}
+                {% endif %}
               </figcaption>
             </figure>
           </div>
@@ -141,19 +144,29 @@
         <!-- row end.// -->
 
         <nav class="mt-4" aria-label="Page navigation sample">
+          {% if Product.has_other_pages %}
           <ul class="pagination">
-            <li class="page-item disabled">
-              <a class="page-link" href="#">Previous</a>
-            </li>
-            <li class="page-item active">
-              <a class="page-link" href="#">1</a>
-            </li>
-            <li class="page-item"><a class="page-link" href="#">2</a></li>
-            <li class="page-item"><a class="page-link" href="#">3</a></li>
-            <li class="page-item">
-              <a class="page-link" href="#">Next</a>
-            </li>
+            {% if Product.has_previous %}
+              <li class="page-item"><a class="page-link" href="?page={{Product.previous_page_number}}">Previous</a></li>
+            {% else %}
+              <li class="page-item disabled"><a class="page-link" href="#">Previous</a></li>
+            {% endif %}
+
+            {% for product in Product.paginator.page_range %}
+              {% if Product.number == product %}
+                <li class="page-item active"><a class="page-link" href="#">{{product}}</a></li>
+              {% else %}
+                <li class="page-item"><a class="page-link" href="?page={{product}}">{{product}}</a></li>
+              {% endif %}
+            {% endfor %}
+
+            {% if Product.has_next %}
+              <li class="page-item"><a class="page-link" href="?page={{Product.next_page_number}}">Next</a></li>
+            {% else %}
+              <li class="page-item disabled"><a class="page-link" href="#">Next</a></li>
+            {% endif %}
           </ul>
+          {% endif %}
         </nav>
       </main>
       <!-- col.// -->

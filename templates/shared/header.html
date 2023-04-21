@@ -77,15 +77,15 @@
           >Store</a
         >
         <div class="col-lg col-md-6 col-sm-12 col">
-          <form action="#" class="search">
+          <form action="{% url 'store:search' %}" class="search" method="GET">
             <div class="input-group w-100">
               <input
                 type="text"
                 class="form-control"
                 style="width: 60%"
-                placeholder="Search"
+                placeholder="Search Keyword: Rolex, Hublot, etc.."
+                name="keyword"
               />
-
               <div class="input-group-append">
                 <button class="btn btn-primary" type="submit">
                   <i class="fa fa-search"></i>
@@ -111,7 +111,7 @@
                 <i class="fa fa-shopping-cart"></i>
               </div>
               
-              <span class="badge badge-pill badge-danger notify">{{cart_count}}</span>
+              <span class="badge badge-pill badge-danger notify">{{counter}}</span>
             </a>
           </div>
           <!-- widgets-wrap.// -->

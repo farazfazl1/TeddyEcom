@@ -1,16 +1,17 @@
-{% extends 'base.html' %} {% block title %}Cart{% endblock title %} 
-{% block content %} {% load static %}{% load humanize %}
+{% extends 'base.html' %} {% block title %}Cart{% endblock title %} {% block content %} {% load static %}{% load humanize %}
 
 <section class="section-content padding-y bg">
   <div class="container">
     <!-- ============================ COMPONENT 1 ================================= -->
     {% if not cart_items %}
-      <!--Print message -->
-      <h2 class="text-center">Your Shopping Cart is Empty</h2>
-      <br />
-      <div class="text-center">
-        <a href="{% url 'store:store' %}" class="btn btn-primary"> Continue Shopping </a>
-      </div>
+    <!--Print message -->
+    <h2 class="text-center">Your Shopping Cart is Empty</h2>
+    <br />
+    <div class="text-center">
+      <a href="{% url 'store:store' %}" class="btn btn-primary">
+        Continue Shopping
+      </a>
+    </div>
     {% else %}
     <div class="row">
       <aside class="col-lg-9">
@@ -25,20 +26,27 @@
               </tr>
             </thead>
             <tbody>
-              {% for item in cart_items %}
+              {% for cart_item in cart_items %}
               <tr>
                 <td>
                   <figure class="itemside align-items-center">
                     <div class="aside">
-                      <img src="{{item.product.images.url}}" class="img-sm" />
+                      <img
+                        src="{{ cart_item.product.images.url }}"
+                        class="img-sm"
+                      />
                     </div>
                     <figcaption class="info">
-                      <a href="{{item.product.get_url}}" class="title text-dark"
-                        >{{item.product.product_name}}</a
+                      <a
+                        href="{{ cart_item.product.get_url }}"
+                        class="title text-dark"
+                        >{{ cart_item.product.product_name }}</a
                       >
                       <p class="text-muted small">
-                        Grip Size: DONT KNOW YET <br />
-                        Brand: {{item.product.category.category_name}}
+                        {% if cart_item.variations.all %} {% for item in cart_item.variations.all %}
+                         {{ item.variation_category | capfirst }} : {{ item.variation_value | capfirst }}
+                        <br />
+                        {% endfor %} {% endif %}
                       </p>
                     </figcaption>
                   </figure>
@@ -49,7 +57,7 @@
                     <div class="input-group input-spinner">
                       <div class="input-group-prepend">
                         <a
-                          href="{% url 'cart:sub_from_cart' item.product.id %}"
+                          href="{% url 'cart:sub_from_cart' cart_item.product.id cart_item.id %}"
                           class="btn btn-light"
                           type="button"
                           id="button-plus"
@@ -60,18 +68,28 @@
                       <input
                         type="text"
                         class="form-control"
-                        name="quantity"
-                        value="{{item.cart_quantity}}"
+                        value="{{ cart_item.cart_quantity }}"
                       />
                       <div class="input-group-append">
-                        <a
-                          href="{% url 'cart:add-to-cart' item.product.id %}"
-                          class="btn btn-light"
-                          type="button"
-                          id="button-minus"
+                        <form
+                          action="{% url 'cart:add-to-cart' cart_item.product.id %}"
+                          method="POST"
                         >
-                          <i class="fa fa-plus"></i>
-                        </a>
+                          {% csrf_token %} {% for item in cart_item.variations.all %}
+                          <input
+                            type="hidden"
+                            name="{{ item.variation_category | lower }}"
+                            value="{{ item.variation_value | capfirst }}"
+                          />
+                          {% endfor %}
+                          <button
+                            class="btn btn-light"
+                            type="submit"
+                            id="button-minus"
+                          >
+                            <i class="fa fa-plus"></i>
+                          </button>
+                        </form>
                       </div>
                     </div>
                     <!-- input-group.// -->
@@ -80,15 +98,21 @@
                 </td>
                 <td>
                   <div class="price-wrap">
-                    <var class="price">${{item.sub_total | intcomma}}</var>
+                    <var class="price">$ {{ cart_item.sub_total | intcomma }}</var>
                     <small class="text-muted">
-                      ${{item.product.price | intcomma}} each
+                      $ {{ cart_item.product.price |intcomma}} each
                     </small>
                   </div>
                   <!-- price-wrap .// -->
                 </td>
                 <td class="text-right">
-                  <a href="{% url 'cart:remove_full_cart' item.product.id %}" class="btn btn-danger"> Remove</a>
+                  <a
+                    href="{% url 'cart:remove_full_cart' cart_item.product.id cart_item.id %}"
+                    onclick="return confirm('Are you sure you want to delete this item?')"
+                    class="btn btn-danger"
+                  >
+                    Remove</a
+                  >
                 </td>
               </tr>
               {% endfor %}
@@ -104,17 +128,17 @@
             <dl class="dlist-align">
               <dt>Total price:</dt>
               {% if total == 0 %}
-                <dd class="text-right">$0</dd>
+              <dd class="text-right">$0</dd>
               {% else %}
-                <dd class="text-right">${{total | intcomma}}</dd>
+              <dd class="text-right">${{total | intcomma}}</dd>
               {% endif %}
             </dl>
             <dl class="dlist-align">
               <dt>Tax:</dt>
               {% if tax == 0 %}
-                <dd class="text-right">$0</dd>
+              <dd class="text-right">$0</dd>
               {% else %}
-                <dd class="text-right">${{tax | intcomma}}</dd>
+              <dd class="text-right">${{tax | intcomma}}</dd>
               {% endif %}
             </dl>
             <dl class="dlist-align">

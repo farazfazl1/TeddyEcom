@@ -15,6 +15,8 @@
           <!-- gallery-wrap .end// -->
         </aside>
         <main class="col-md-6 border-left">
+          <form action="{% url 'cart:add-to-cart' product_id=product.id %}" method="POST">
+            {% csrf_token %}
           <article class="content-body">
             <h2 class="title">{{product.product_name}}</h2>
 
@@ -26,50 +28,51 @@
 
             <hr />
             <!-- row.// -->
+              
             <div class="row">
-              <div class="item-option-select">
-                <h6>Select Hand Grip</h6>
-                <div
-                  class="btn-group btn-group-sm btn-group-toggle"
-                  data-toggle="buttons"
-                >
-                  <label class="btn btn-light">
-                    <input type="radio" name="radio_color" /> 16 mm
-                  </label>
-                  <label class="btn btn-light active">
-                    <input type="radio" name="radio_color" checked /> 18 mm
-                  </label>
-                  <label class="btn btn-light">
-                    <input type="radio" name="radio_color" /> 20 mm
-                  </label>
-                  <label class="btn btn-light">
-                    <input type="radio" name="radio_color" /> 22 mm
-                  </label>
-                </div>
-              </div>
-            </div>
+              {% if product.variation_set.colors %}
+                <label for="color">Strap Color:</label>
+                  <select class="form-control" id="color" name="color" required>
+                      <option value="" disabled selected>Choose Color</option>
+                      {% for st in product.variation_set.colors %}
+                          <option value="{{st.variation_value}}">{{st.variation_value|capfirst}}</option>
+                      {% endfor %}
+                  </select>
+              {% else %}
+                  <p>No color variations available.</p>
+                  <hr />
+              {% endif %}
+          </div>
+          <div class="row">
+              {% if product.variation_set.materials %}
+                <label for="material">Strap Material:</label>
+                  <select class="form-control" id="material" name="material">
+                      <option value="" disabled selected>Choose Material</option>
+                      {% for st in product.variation_set.materials %}
+                          <option value="{{st.variation_value}}">{{st.variation_value|capfirst}}</option>
+                      {% endfor %}
+                  </select>
+              {% else %}
+                  <p>No material variations available.</p>
+                  <hr />
+              {% endif %}
+          </div>
+          
+          
             <!-- row.// -->
             <hr />
             {% if product.stock <= 0 %}
             <h5 class="text-danger">Out of Stock</h5>
-            {% else %} {% if in_cart %}
-            <a class="btn btn-success">
-              <span class="text">Added to cart</span>
-              <i class="fas fa-check"></i>
-            </a>
-            <a href="{% url 'cart:cart' %}" class="btn btn-secondary">
-              <span class="text">View Cart</span>
-              <i class="fas fa-eye"></i>
-            </a>
-            {% else %}
-            <a
-              href="{% url 'cart:add-to-cart' product_id=product.id %}"
+            {% else %} 
+            <button
+              type="submit"
               class="btn btn-primary"
             >
               <span class="text">Add to cart</span>
               <i class="fas fa-shopping-cart"></i>
-            </a>
-            {% endif %} {% endif %}
+            </button>
+          </form>
+            {% endif %}
           </article>
           <!-- product-info-aside .// -->
         </main>

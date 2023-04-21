@@ -2,6 +2,7 @@ from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from store.models import Product
 from .models import Cart, CartItem
+from store.models import Variation
 
 
 # This function generates a unique cart ID based on the user's session ID
@@ -16,6 +17,29 @@ def _cart_id(req):
 def add_to_cart(req, product_id):
     # Get the product object from the database using the product ID provided
     product = Product.objects.get(id=product_id)
+    product_variation = []
+
+    # Check if the form has been submitted using the POST method
+    if req.method == 'POST':
+        # Loop through all the form input elements submitted in the POST request
+        for item in req.POST:
+            # Get the name of the form input element that was submitted
+            key = item
+
+            # Get the selected value for the form input element
+            value = req.POST[key]
+
+            # Attempt to retrieve a Variation object with the corresponding category and value
+            try:
+                variation = Variation.objects.get(
+                    product=product,
+                    variation_category__iexact=key,
+                    variation_value__iexact=value)
+                # Append the retrieved Variation object to the product_variation list
+                product_variation.append(variation)
+            except:
+                # If a Variation object with the corresponding category and value cannot be found, ignore it
+                pass
 
     try:
         # Try to get the cart object associated with the user's session ID
@@ -27,16 +51,51 @@ def add_to_cart(req, product_id):
     # Save the cart object
     cart.save()
 
-    try:
-        # Try to get the cart item associated with the product and cart objects
-        cart_item = CartItem.objects.get(product=product, cart=cart)
-        # If the cart item already exists, increment the quantity by 1 and save
-        cart_item.cart_quantity += 1
-        cart_item.save()
-    except CartItem.DoesNotExist:
-        # If the cart item doesn't exist, create a new one with a quantity of 1 and save
+    # Check if the product is already in the cart
+    does_cart_item_exist = CartItem.objects.filter(
+        product=product, cart=cart).exists()
+
+    if does_cart_item_exist:
+        # If the cart item already exists, get the existing cart item and update its quantity
+        cart_item = CartItem.objects.filter(product=product, cart=cart)
+        existing_variation_list = []
+        id = []
+        
+        
+        
+        for item in cart_item:
+            # Get a list of all the variations associated with the existing cart item
+            existing_variation = item.variations.all()
+            existing_variation_list.append(list(existing_variation))
+            id.append(item.id)
+
+        if product_variation in existing_variation_list:
+            # If the new product variation matches an existing cart item's variations, update its quantity
+            index = existing_variation_list.index(product_variation)
+            item_id = id[index]
+            item = CartItem.objects.get(product=product, id=item_id)
+            item.cart_quantity += 1
+            item.save()
+        else:
+            # If the new product variation doesn't match any existing cart item's variations, update the cart item's variations
+            item = CartItem.objects.create(
+                product=product, cart_quantity=1, cart=cart)
+            if len(product_variation) > 0:
+                item.variations.clear()
+                item.variations.add(*product_variation)
+
+            # Increment the cart item's quantity by 1 and save it
+            item.save()
+    else:
+        # If the cart item doesn't exist, create a new one with a quantity of 1 and save it
         cart_item = CartItem.objects.create(
-            product=product, cart=cart, cart_quantity=1)
+            product=product, cart_quantity=1, cart=cart)
+
+        if len(product_variation) > 0:
+            cart_item.variations.clear()
+            cart_item.variations.add(*product_variation)
+
+        # Save the cart item
         cart_item.save()
 
     # Redirect the user to the 'cart' page after the product is added to the cart
@@ -75,30 +134,33 @@ def cart(req, total=0, quantity=0, cart_items=None):
 
 
 # Function to subtract one quantity from the cart item for a given product
-def sub_from_cart(req, product_id):
+def sub_from_cart(req, product_id, cart_item_id):
     # Get the cart associated with the user
     cart = Cart.objects.get(cart_id=_cart_id(req))
 
     # Get the product that is being modified
     product = get_object_or_404(Product, id=product_id)
-
+    
+    try:
     # Get the cart item for the product in the cart
-    cart_item = CartItem.objects.get(product=product, cart=cart)
+        cart_item = CartItem.objects.get(product=product, cart=cart, id=cart_item_id)
 
-    # If the cart item quantity is greater than 1, subtract 1 and save the item
-    if cart_item.cart_quantity > 1:
-        cart_item.cart_quantity -= 1
-        cart_item.save()
-    else:
-        # If the quantity is 1 or less, delete the item from the cart
-        cart_item.delete()
+        # If the cart item quantity is greater than 1, subtract 1 and save the item
+        if cart_item.cart_quantity > 1:
+            cart_item.cart_quantity -= 1
+            cart_item.save()
+        else:
+            # If the quantity is 1 or less, delete the item from the cart
+            cart_item.delete()
+    except:
+        pass
 
     # Redirect to the cart page
     return redirect('cart:cart')
 
 
 # Function to remove a product's entire cart
-def remove_full_cart(req, product_id):
+def remove_full_cart(req, product_id, cart_item_id):
     # Get the cart associated with the user
     cart = Cart.objects.get(cart_id=_cart_id(req))
 
@@ -106,7 +168,7 @@ def remove_full_cart(req, product_id):
     product = get_object_or_404(Product, id=product_id)
 
     # Get the cart item for the product in the cart
-    cart_item = CartItem.objects.get(product=product, cart=cart)
+    cart_item = CartItem.objects.get(product=product, cart=cart, id=cart_item_id)
 
     # Delete the cart item from the cart
     cart_item.delete()
