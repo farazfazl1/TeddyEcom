@@ -219,3 +219,4 @@ def reset_password_page(req):
             return redirect('users:reset-password-page')
 
     return render(req, 'users/resetPassword.html')
+#contributed April 26th
