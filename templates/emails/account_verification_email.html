@@ -1,0 +1,21 @@
+{% autoescape off %}
+Dear {{ user.first_name }},
+
+Welcome to Teddy Ecom! We are thrilled to have you as a new member of our exclusive community.
+
+At Teddy Ecom, we offer highly selective and luxurious watches that are handpicked by our team of experts. We believe that each watch tells a unique story and represents a piece of art that deserves to be cherished for a lifetime.
+
+To activate your account and start exploring our collection, please click on the link below:
+
+http://{{ domain }}{% url 'users:activate' uidb64=uid token=token %}
+
+If you didn't register on our website or have received this email in error, please ignore it.
+
+If you have any questions or concerns, please don't hesitate to reach out to our customer support team. We are always here to help.
+
+Thank you for choosing Teddy Ecom!
+
+Best regards,
+The Teddy Ecom Team
+
+{% endautoescape %}

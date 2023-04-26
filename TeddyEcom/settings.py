@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 
 from pathlib import Path
+from django.contrib.messages import constants as messages
 import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -148,6 +149,21 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 STATICFILES_FINDERS = ['django.contrib.staticfiles.finders.FileSystemFinder',
                        'django.contrib.staticfiles.finders.AppDirectoriesFinder',]
+
+MESSAGE_TAGS = {
+    messages.ERROR: 'danger',
+
+}
+
+# CONFIGURE EMAIL HOST
+# SMTP CONFIGURATIONS
+# Email Settings
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_HOST_USER = 'faraztestingdeveloper@gmail.com'
+EMAIL_HOST_PASSWORD = 'rvkwkbuvqkcdzzsb'
+EMAIL_USE_TLS = True
 
 
 # Default primary key field type
