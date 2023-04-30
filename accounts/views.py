@@ -13,6 +13,9 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import EmailMessage
 
+from carts.models import CartItem, Cart
+from carts.views import _cart_id
+
 
 @login_required(login_url='users:login-user')
 def dashboard(req):
@@ -89,6 +92,28 @@ def login_user(req):
         user = auth.authenticate(email=email, password=password)
 
         if user is not None:
+            try:
+                # Retrieve the user's cart using the _cart_id() function and update the cart items to be associated with the logged-in user
+                print('Entering inside try block')
+                cart = Cart.objects.get(cart_id=_cart_id(req))
+
+                # Check if there are any cart items associated with the cart
+                does_cart_item_exist = CartItem.objects.filter(
+                    cart=cart).exists()
+                print(does_cart_item_exist)
+
+                if does_cart_item_exist:
+                    # Update the user field of each cart item to be associated with the logged-in user
+                    cart_items = CartItem.objects.filter(cart=cart)
+
+                    for item in cart_items:
+                        item.user = user
+                        item.save()
+                else:
+                    print('I cannto find cart item')
+            except:
+                print('entering isndie except block')
+                pass
             # If the user is found, log them in using Django's built-in login method
             auth.login(req, user)
             # Display a success message using Django's built-in messages framework
@@ -102,6 +127,7 @@ def login_user(req):
 
     # If the user is not submitting the login form, display the login form using the template
     return render(req, 'users/login.html')
+
 
 # this decorator will check if the user is authenticated before accessing the view
 

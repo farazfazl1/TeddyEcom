@@ -1,11 +1,13 @@
-from django.http import HttpResponse
+
 from django.shortcuts import render, redirect, get_object_or_404
 from store.models import Product
 from .models import Cart, CartItem
 from store.models import Variation
-
+from django.contrib.auth.decorators import login_required
 
 # This function generates a unique cart ID based on the user's session ID
+
+
 def _cart_id(req):
     cart = req.session.session_key
     if not cart:
@@ -60,9 +62,7 @@ def add_to_cart(req, product_id):
         cart_item = CartItem.objects.filter(product=product, cart=cart)
         existing_variation_list = []
         id = []
-        
-        
-        
+
         for item in cart_item:
             # Get a list of all the variations associated with the existing cart item
             existing_variation = item.variations.all()
@@ -103,6 +103,8 @@ def add_to_cart(req, product_id):
 
 
 def cart(req, total=0, quantity=0, cart_items=None):
+    tax = 0
+    grand_total = 0
     # Try to get the cart based on the cart id stored in the session
     try:
         cart = Cart.objects.get(cart_id=_cart_id(req))
@@ -126,7 +128,7 @@ def cart(req, total=0, quantity=0, cart_items=None):
         'cart_quantity': quantity,
         'cart_items': cart_items,
         'tax': tax,
-        'grand_total': grand_total
+        'grand_total': grand_total,
     }
 
     # Render the cart template with the context data
@@ -140,10 +142,11 @@ def sub_from_cart(req, product_id, cart_item_id):
 
     # Get the product that is being modified
     product = get_object_or_404(Product, id=product_id)
-    
+
     try:
-    # Get the cart item for the product in the cart
-        cart_item = CartItem.objects.get(product=product, cart=cart, id=cart_item_id)
+        # Get the cart item for the product in the cart
+        cart_item = CartItem.objects.get(
+            product=product, cart=cart, id=cart_item_id)
 
         # If the cart item quantity is greater than 1, subtract 1 and save the item
         if cart_item.cart_quantity > 1:
@@ -168,10 +171,43 @@ def remove_full_cart(req, product_id, cart_item_id):
     product = get_object_or_404(Product, id=product_id)
 
     # Get the cart item for the product in the cart
-    cart_item = CartItem.objects.get(product=product, cart=cart, id=cart_item_id)
+    cart_item = CartItem.objects.get(
+        product=product, cart=cart, id=cart_item_id)
 
     # Delete the cart item from the cart
     cart_item.delete()
 
     # Redirect to the cart page
     return redirect('cart:cart')
+
+
+@login_required(login_url='users:login-user')
+def checkout(req, total=0, quantity=0, cart_items=None):
+    tax = 0
+    grand_total = 0
+    # Try to get the cart based on the cart id stored in the session
+    try:
+        cart = Cart.objects.get(cart_id=_cart_id(req))
+        # Get all the cart items for this cart that are still active
+        cart_items = CartItem.objects.filter(cart=cart, is_active=True)
+        # Loop through all the cart items and calculate the total cost and quantity
+        for cart_item in cart_items:
+            total += (cart_item.product.price * cart_item.cart_quantity)
+            quantity += cart_item.cart_quantity
+
+        # Calculate 8% tax similar to Cali sales tax
+        tax = (8 * total)/100
+        grand_total = total + tax
+    # If the cart does not exist, do nothing (i.e. no items in cart)
+    except Cart.DoesNotExist:
+        pass
+
+    # Create a dictionary of data to pass to the template
+    context = {
+        'total': total,
+        'cart_quantity': quantity,
+        'cart_items': cart_items,
+        'tax': tax,
+        'grand_total': grand_total,
+    }
+    return render(req, 'cart/checkout.html', context)
