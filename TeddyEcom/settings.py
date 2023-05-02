@@ -44,6 +44,8 @@ INSTALLED_APPS = [
     'accounts',
     'store',
     'carts',
+    'sendgrid',
+    'orders',
 ]
 
 MIDDLEWARE = [
@@ -158,12 +160,17 @@ MESSAGE_TAGS = {
 # CONFIGURE EMAIL HOST
 # SMTP CONFIGURATIONS
 # Email Settings
+# Set the email backend to use SendGrid API
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
+
+# SMTP settings for SendGrid
+EMAIL_HOST = 'smtp.sendgrid.net'
 EMAIL_PORT = 587
-EMAIL_HOST_USER = 'faraztestingdeveloper@gmail.com'
-EMAIL_HOST_PASSWORD = 'rvkwkbuvqkcdzzsb'
 EMAIL_USE_TLS = True
+
+# Use your SendGrid account API key as the password
+EMAIL_HOST_USER = 'apikey'
+EMAIL_HOST_PASSWORD = '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'
 
 
 # Default primary key field type

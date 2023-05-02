@@ -19,5 +19,5 @@ urlpatterns = [
          views.remove_full_cart, name='remove_full_cart'),
 
 
-    path('checkout/', views.checkout, name='checkout')
+    path('checkout/', views.checkout, name='checkout'),
 ]

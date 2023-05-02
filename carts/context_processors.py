@@ -14,9 +14,11 @@ def counter(req):
         try:
             # Get the cart associated with the current request
             cart = Cart.objects.filter(cart_id=_cart_id(req))
-
-            # Get all cart items associated with the cart and sum their quantities
-            cart_items = CartItem.objects.all().filter(cart=cart[:1])
+            if req.user.is_authenticated:
+                cart_items = CartItem.objects.all().filter(user=req.user)
+            else:
+                # Get all cart items associated with the cart and sum their quantities
+                cart_items = CartItem.objects.all().filter(cart=cart[:1])
             for item in cart_items:
                 cart_count += item.cart_quantity
 

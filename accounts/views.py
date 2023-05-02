@@ -11,10 +11,12 @@ from django.template.loader import render_to_string
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.contrib.auth.tokens import default_token_generator
-from django.core.mail import EmailMessage
 
 from carts.models import CartItem, Cart
 from carts.views import _cart_id
+from django.core.mail import send_mail
+from django.conf import settings
+import requests
 
 
 @login_required(login_url='users:login-user')
@@ -23,18 +25,6 @@ def dashboard(req):
 
 
 def register_user(req):
-    """
-    This function is responsible for registering a new user with the system. If the user submits a valid registration
-    form, a new user account will be created, the user will receive an email to verify their account, and the user will be
-    redirected to the login page. If the user submits an invalid registration form, an error message will be displayed.
-
-    The function first checks if the request method is POST. If so, it creates a new instance of the RegistrationForm
-    class using the data submitted by the user. It then checks if the form data is valid. If the form is valid, it creates
-    a new user object using the data from the form, and sends an email to the user to verify their account. If the form
-    is not valid, it simply displays the registration form with the errors highlighted.
-
-    Once a user has been successfully registered, they will be redirected to the login page.
-    """
     if req.method == 'POST':
         form = RegistrationForm(req.POST)
         if form.is_valid():
@@ -64,14 +54,15 @@ def register_user(req):
                 'token': default_token_generator.make_token(user)
             })
             to_email = email
-            send_email = EmailMessage(mail_subject, message, to=[to_email])
-            send_email.send()
+            # send_email = EmailMessage(mail_subject, message, to=[to_email])
+            send_mail(mail_subject, message, 'TeddyEcom <faraztestingdeveloper@gmail.com>   ',
+                      [to_email], fail_silently=False)
 
             # display success message and redirect to login page
             messages.success(
                 req, 'Thank you for Registration. We have sent you an email to Verify your Account ✔')
             print(user)
-            return redirect('users:register-user')
+            return redirect('users:login-user')
     else:
         form = RegistrationForm()
     context = {
@@ -94,32 +85,70 @@ def login_user(req):
         if user is not None:
             try:
                 # Retrieve the user's cart using the _cart_id() function and update the cart items to be associated with the logged-in user
-                print('Entering inside try block')
                 cart = Cart.objects.get(cart_id=_cart_id(req))
 
                 # Check if there are any cart items associated with the cart
                 does_cart_item_exist = CartItem.objects.filter(
                     cart=cart).exists()
-                print(does_cart_item_exist)
 
                 if does_cart_item_exist:
                     # Update the user field of each cart item to be associated with the logged-in user
                     cart_items = CartItem.objects.filter(cart=cart)
 
+                    # Get a list of all the product variations associated with the cart items
+                    product_variation = []
                     for item in cart_items:
-                        item.user = user
-                        item.save()
+                        variation = item.variations.all()
+                        product_variation.append(list(variation))
+
+                    # Get a list of all the cart items associated with the user and their product variations
+                    cart_item = CartItem.objects.filter(user=user)
+                    existing_variation_list = []
+                    id = []
+
+                    for item in cart_item:
+                        existing_variation = item.variations.all()
+                        existing_variation_list.append(
+                            list(existing_variation))
+                        id.append(item.id)
+
+                    # Update the cart items associated with the logged-in user with any matching product variations from the previous session
+                    for pr in product_variation:
+                        if pr in existing_variation_list:
+                            index = existing_variation_list.index(pr)
+                            item_id = id[index]
+                            item = CartItem.objects.get(id=item_id)
+                            item.cart_quantity += 1
+                            item.user = user
+                            item.save()
+                        else:
+                            # Add any new cart items associated with the logged-in user
+                            cart_item = CartItem.objects.filter(cart=cart)
+                            for item in cart_item:
+                                item.user = user
+                                item.save()
+
                 else:
-                    print('I cannto find cart item')
+                    print('No cart items found')
             except:
-                print('entering isndie except block')
+                print('An error occurred while updating cart items')
                 pass
+
             # If the user is found, log them in using Django's built-in login method
             auth.login(req, user)
             # Display a success message using Django's built-in messages framework
             messages.success(req, "You are now logged in ✔")
-            # Redirect the user to their dashboard page
-            return redirect('users:dashboard')
+            url = req.META.get('HTTP_REFERER')
+
+            try:
+                query = requests.utils.urlparse(url).query
+                # next=/cart/checkout
+                params = dict(x.split('=') for x in query.split('&'))
+                if 'next' in params:
+                    nextPage = params['next']
+                    return redirect(nextPage)
+            except:
+                return redirect('users:dashboard')
         else:
             # If the user is not found or the password is incorrect, display an error message and redirect back to the login page
             messages.error(req, 'Invalid Email/Password ❌')
@@ -187,8 +216,8 @@ def forgotPassword(req):
             })
 
             to_email = email
-            send_email = EmailMessage(mail_subject, message, to=[to_email])
-            send_email.send()
+            send_mail(mail_subject, message, 'TeddyEcom <faraztestingdeveloper@gmail.com>',
+                      [to_email], fail_silently=False)
 
             # Show success message and redirect to login page
             messages.success(
@@ -245,4 +274,4 @@ def reset_password_page(req):
             return redirect('users:reset-password-page')
 
     return render(req, 'users/resetPassword.html')
-#contributed April 26th
+# contributed April 26th
