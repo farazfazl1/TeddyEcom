@@ -44,8 +44,8 @@ INSTALLED_APPS = [
     'accounts',
     'store',
     'carts',
-    'sendgrid',
     'orders',
+    'sendgrid',
 ]
 
 MIDDLEWARE = [
