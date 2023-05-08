@@ -1,5 +1,5 @@
-{% extends 'base.html' %} {% block title %}Cart{% endblock title %} {% block content %} {% load static %}{% load humanize %}
-
+{% extends 'base.html' %} {% block title %}Cart{% endblock title %} 
+{% block content %} {% load static %} {% load humanize %}
 <section class="section-content padding-y bg">
   <div class="container">
     <!-- ============================ COMPONENT 1 ================================= -->
@@ -58,7 +58,8 @@
                               >{{ cart_item.product.product_name }}</a
                             >
                             <p class="text-muted small">
-                              {% if cart_item.variations.all %} {% for item in cart_item.variations.all %}
+                              {% if cart_item.variations.all %} 
+                              {% for item in cart_item.variations.all %}
                               {{item.variation_category | capfirst }} :
                               {{item.variation_value | capfirst }} <br />
                               {% endfor %} {% endif %}
@@ -111,10 +112,7 @@
                     height="26"
                   />
                 </p>
-
-                <div id="paypal-button-container">
-                  <div id="paypal-button-container"></div>
-                </div>
+                <div id="paypal-button-container"></div>
               </div>
               <!-- card-body.// -->
             </div>
@@ -134,88 +132,86 @@
     </section>
     <!-- ========================= SECTION CONTENT END// ========================= -->
     <script>
-      // Render the PayPal button into #paypal-button-container
+      function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== "") {
+          const cookies = document.cookie.split(";");
+          for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            // Does this cookie string begin with the name we want?
+            if (cookie.substring(0, name.length + 1) === name + "=") {
+              cookieValue = decodeURIComponent(
+                cookie.substring(name.length + 1)
+              );
+              break;
+            }
+          }
+        }
+        return cookieValue;
+      }
+
+      let amount = "{{grand_total}}"; //sending grandtotal from context so it is available here as well
+      let url = "{% url 'order:payments' %}";
+      let csrf_token = getCookie("csrftoken");
+      let orderID = "{{order.order_number}}";
+      let payment_method = "PayPal";
+      let redirect_url = "{% url 'order:successful-payments' %}";
+
       paypal
         .Buttons({
-          // Call your server to set up the transaction
+          //Takes amount of order and create order
           createOrder: function (data, actions) {
-            return fetch("/demo/checkout/api/paypal/order/create/", {
-              method: "post",
-            })
-              .then(function (res) {
-                return res.json();
-              })
-              .then(function (orderData) {
-                return orderData.id;
-              });
+            return actions.order.create({
+              purchase_units: [
+                {
+                  amount: {
+                    value: amount,
+                  },
+                },
+              ],
+            });
           },
 
-          // Call your server to finalize the transaction
+          //response if the payment is successful or fail
           onApprove: function (data, actions) {
-            return fetch(
-              "/demo/checkout/api/paypal/order/" + data.orderID + "/capture/",
-              {
-                method: "post",
+            return actions.order.capture().then(function (details) {
+              console.log(details);
+              function sendData() {
+                // Function that will send data to our view, using fetch
+                fetch(url, {
+                  method: "POST",
+                  headers: {
+                    "Content-type": "application/json",
+                    "X-CSRFToken": csrf_token,
+                  },
+                  body: JSON.stringify({
+                    orderID: orderID,
+                    transID: details.id,
+                    payment_method: payment_method,
+                    status: details.status,
+                  }),
+                })
+                  .then((response) => response.json())
+                  .then((data) => {
+                    window.location.href =
+                      redirect_url +
+                      "?order_number=" +
+                      data.order_number +
+                      "&payment_id=" +
+                      data.transID;
+                  });
               }
-            )
-              .then(function (res) {
-                return res.json();
-              })
-              .then(function (orderData) {
-                // Three cases to handle:
-                //   (1) Recoverable INSTRUMENT_DECLINED -> call actions.restart()
-                //   (2) Other non-recoverable errors -> Show a failure message
-                //   (3) Successful transaction -> Show confirmation or thank you
-
-                // This example reads a v2/checkout/orders capture response, propagated from the server
-                // You could use a different API or structure for your 'orderData'
-                var errorDetail =
-                  Array.isArray(orderData.details) && orderData.details[0];
-
-                if (
-                  errorDetail &&
-                  errorDetail.issue === "INSTRUMENT_DECLINED"
-                ) {
-                  return actions.restart(); // Recoverable state, per:
-                  // https://developer.paypal.com/docs/checkout/integration-features/funding-failure/
-                }
-
-                if (errorDetail) {
-                  var msg = "Sorry, your transaction could not be processed.";
-                  if (errorDetail.description)
-                    msg += "\n\n" + errorDetail.description;
-                  if (orderData.debug_id)
-                    msg += " (" + orderData.debug_id + ")";
-                  return alert(msg); // Show a failure message (try to avoid alerts in production environments)
-                }
-
-                // Successful capture! For demo purposes:
-                console.log(
-                  "Capture result",
-                  orderData,
-                  JSON.stringify(orderData, null, 2)
-                );
-                var transaction =
-                  orderData.purchase_units[0].payments.captures[0];
-                alert(
-                  "Transaction " +
-                    transaction.status +
-                    ": " +
-                    transaction.id +
-                    "\n\nSee console for all available details"
-                );
-
-                // Replace the above to show a success message within this page, e.g.
-                // const element = document.getElementById('paypal-button-container');
-                // element.innerHTML = '';
-                // element.innerHTML = '<h3>Thank you for your payment!</h3>';
-                // Or go to another URL:  actions.redirect('thank_you.html');
-              });
+              sendData();
+              alert(
+                "Transaction completed by " +
+                  details.payer.name.given_name +
+                  "!"
+              );
+            });
           },
         })
         .render("#paypal-button-container");
     </script>
-
     {% endblock %}
   </div>
 </section>

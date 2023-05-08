@@ -105,8 +105,6 @@ Order Product
     user (ForeignKey User)
     product (ForeignKey Product)
     variation (ForeignKey Variation)
-    color
-    size
     quantity
     product_price
     is_ordered
