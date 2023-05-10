@@ -22,7 +22,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-#SECURITY KEY SAFETY
+SECRET_KEY = "iehjfoasifn83jb3baui7sdghauwd2wd&UGALSDYUGBAWKTYDFAW#YDGKL@UGDXO&Q@#GAD^Y&*gb"
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
@@ -174,7 +174,8 @@ EMAIL_USE_TLS = True
 
 # Use your SendGrid account API key as the password
 EMAIL_HOST_USER = 'apikey'
-#EMAIL HOST PASSWORD SAFETY
+EMAIL_HOST_PASSWORD = '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'
+# EMAIL HOST PASSWORD SAFETY
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field

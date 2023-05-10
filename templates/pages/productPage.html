@@ -1,6 +1,7 @@
 {% extends 'base.html' %} {% block title %}Product{% endblock %} 
 {% block content %} {% load static %} {% load humanize %}
 
+
 <section class="section-content padding-y bg">
   <div class="container">
     <div class="card">
@@ -89,28 +90,78 @@
       <div class="col-md-9">
         <header class="section-heading">
           <h3>Customer Reviews</h3>
+          {% include 'shared/messages.html' %}
         </header>
 
+        <form action="{% url 'store:submit-review' product.id %}" method="POST">
+          {% csrf_token %}
+        
+          <h5>Write your Review</h5>
+          <div>
+            <!-- Rating stars -->
+            <fieldset class="rating">
+              <input type="radio" id="star5" name="rating" value="5" required>
+              <label for="star5" title="5 stars"></label>
+              <input type="radio" id="star4" name="rating" value="4" required>
+              <label for="star4" title="4 stars"></label>
+              <input type="radio" id="star3" name="rating" value="3" required>
+              <label for="star3" title="3 stars"></label>
+              <input type="radio" id="star2" name="rating" value="2" required>
+              <label for="star2" title="2 stars"></label>
+              <input type="radio" id="star1" name="rating" value="1" required>
+              <label for="star1" title="1 star"></label>
+            </fieldset>
+        
+            Review Title: 
+            <input type="text" class="form-control" name="subject">
+            <br />
+        
+            Text Area:
+            <textarea name="review" rows="4" class="form-control"></textarea>
+            <br />
+        
+            {% if user.is_authenticated %}
+              {% if ordered_product %}
+                <input type="submit" value="Submit Review" class="btn btn-primary">
+              {% else %}
+              <p>Must purchase {{product.product_name}} first before reviewing it</p>
+              {% endif %}
+            {% else %}
+              <p>Must be logged in to post a reivew. <span><a href="{% url 'users:login-user' %}">Login Now</a></span></p>
+            {% endif %}
+            
+          </div>
+        </form>
+        
+        
+
+        <br />
         <article class="box mb-3">
+          {% for review in reviews %}
           <div class="icontext w-100">
-            <img
-              src="./images/avatars/avatar1.jpg"
-              class="img-xs icon rounded-circle"
-            />
             <div class="text">
-              <span class="date text-muted float-md-right">24.04.2020 </span>
-              <h6 class="mb-1">Mike John</h6>
+              <span class="date text-muted float-md-right">{{review.updated_at}} </span>
+              <h6 class="mb-1">{{ review.user.full_name }}</h6>
+              <div>
+                {% for i in "12345" %}
+                  {% if forloop.counter <= review.rating %}
+                    <i class="fa fa-star" style="color: #f8d64e;"></i>
+                  {% else %}
+                    <i class="far fa-star" style="color: #f8d64e;"></i>
+                  {% endif %}
+                {% endfor %}
+              </div>              
             </div>
           </div>
           <!-- icontext.// -->
           <div class="mt-3">
+            <h6>{{review.subject}}</h6>
             <p>
-              Dummy comment Lorem ipsum dolor sit amet, consectetur adipisicing
-              elit, sed do eiusmod tempor incididunt ut labore et dolore magna
-              aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco
-              laboris nisi ut aliquip
+              {{review.review}}
             </p>
           </div>
+          {% endfor %}
+          
         </article>
       </div>
       <!-- col.// -->
@@ -119,4 +170,5 @@
   </div>
   <!-- container .//  -->
 </section>
+
 {% endblock content %}

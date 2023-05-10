@@ -1,10 +1,14 @@
-from django.shortcuts import render, get_object_or_404
-from .models import Product
+from django.shortcuts import render, get_object_or_404, redirect
+
+from orders.models import OrderProduct
+from .models import Product, ReviewRating
+from django.contrib import messages
 from category.models import Category
 from carts.models import CartItem
 from django.core.paginator import Paginator
 from carts.views import _cart_id
 from django.db.models import Q
+from .forms import ReviewForm
 
 
 def store(req, category_slug=None):
@@ -66,10 +70,27 @@ def product_detail(req, category_slug, product_slug):
     except Exception as e:
         raise e
 
+    if req.user.is_authenticated:
+        try:
+            ordered_product = OrderProduct.objects.filter(
+                user=req.user, product_id=single_product.id).exists()
+
+        except OrderProduct.DoesNotExist:
+            ordered_product = None
+    else:
+        ordered_product = None
+
+    # Get all the reviews
+    # When admin doesnt want to show a particular reivew, they can turn status False to make reivew dissapear
+    reviews = ReviewRating.objects.filter(
+        product_id=single_product.id, status=True)
+
     # Create a dictionary of variables to be used in the template
     context = {
         'product': single_product,
-        'in_cart': in_cart,  # Add the in_cart variable to the context dictionary
+        'in_cart': in_cart,  # Add the in_cart variable to the context dictionary,
+        'ordered_product': ordered_product,
+        'reviews': reviews
     }
 
     # Render the template with the dictionary of variables
@@ -115,3 +136,39 @@ def search(req):
 
     # Render the template with the dictionary of variables
     return render(req, 'pages/store.html', context)
+
+
+def submit_review(req, product_id):
+    url = req.META.get('HTTP_REFERER')  # store the already existing URL
+    if req.method == 'POST':
+        try:
+            review = ReviewRating.objects.get(
+                user__id=req.user.id, product__id=product_id)
+            form = ReviewForm(req.POST, instance=review)
+
+            if form.is_valid():
+                form.save()  # Save the updated form
+
+                messages.success(
+                    req, 'Thank you. Your review has been updated')
+            else:
+                messages.error(req, 'Failed to update the review')
+
+            return redirect(url)
+
+        except ReviewRating.DoesNotExist:
+            form = ReviewForm(req.POST)
+
+            if form.is_valid():
+                data = form.save(commit=False)
+                data.ip_address = req.META.get('REMOTE_ADDR')
+                data.product_id = product_id
+                data.user_id = req.user.id
+                data.save()
+
+                messages.success(
+                    req, 'Thank you. Your review has been submitted')
+            else:
+                messages.error(req, 'Failed to submit the review')
+
+            return redirect(url)

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Product, Variation
+from .models import Product, Variation, ReviewRating
 from django.utils.html import format_html
 
 
@@ -32,6 +32,9 @@ class VariationAdmin(admin.ModelAdmin):
         'is_active',
     )
 
+# class ReviewRatingAdmin(admin.ModelAdmin):
+
 
 admin.site.register(Product, ProductAdmin)
 admin.site.register(Variation, VariationAdmin)
+admin.site.register(ReviewRating)

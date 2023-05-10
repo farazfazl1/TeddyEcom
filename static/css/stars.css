@@ -1,0 +1,32 @@
+.rating {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: center;
+  margin-top: 5px;
+}
+
+.rating input {
+  display: none;
+}
+
+.rating label {
+  font-size: 34px;
+  color: #ccc;
+  margin-right: 5px;
+  cursor: pointer;
+}
+
+.rating label:before {
+  content: "\2606"; /* Unicode character for empty star */
+}
+
+.rating input:checked ~ label:before {
+  content: "\2605"; /* Unicode character for filled star */
+  color: #f8d64e; /* Color for the selected star */
+}
+
+.rating label:hover:before,
+.rating label:hover ~ label:before {
+  color: #f8d64e; /* Color for the hovered stars */
+}
